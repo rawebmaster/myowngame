@@ -84,8 +84,8 @@ def get_q_and_a() -> list:
 @dp.message(Command(commands=["go"]))
 async def process_start_command(message: Message):
     get_q_and_a()
-    await message.answer(str(question))
-    await message.answer(text=f"<span class='tg-spoiler'>'{answer.replace("'","")}'</span>", parse_mode='HTML', reply_markup=keyboard)
+    await message.answer(text=f'''Тема: <b>{topic}</b>\nЦена: {price}\n<i>{question}</i>''', parse_mode='HTML')
+    await message.answer(text=f'''<span class='tg-spoiler'>{answer}</span>''', parse_mode='HTML', reply_markup=keyboard)
 
 # Этот хэндлер будет срабатывать на ответ "Ещё!" и добавлять ещё один вопрос
 #@dp.message(F.text == 'Ещё!')
@@ -100,15 +100,9 @@ async def process_start_command(message: Message):
 @dp.callback_query(F.data == 'more_button_pressed')
 async def process_more_button_press(callback: CallbackQuery):
     get_q_and_a()
-    await callback.message.answer(str(question))
-    await callback.message.answer(text=f"<span class='tg-spoiler'>'{answer}'</span>", parse_mode='HTML', reply_markup=keyboard)
+    await callback.message.answer(text=f'''Тема: <b>{topic}</b>\nЦена: {price}\n<i>{question}</i>''', parse_mode='HTML')
+    await callback.message.answer(text=f'''<span class='tg-spoiler'>{answer}</span>''', parse_mode='HTML', reply_markup=keyboard)
     await callback.answer()
-
-
-
-
-
-
 
 # Регистрируем асинхронную функцию в диспетчере,
 # которая будет выполняться на старте бота,
