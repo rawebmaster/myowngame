@@ -1,4 +1,4 @@
-from config_data.config import *
+from config_data.config import mydb
 from handlers.user_handlers import *
 from keyboards.mainmenu import set_main_menu
 from environs import Env
@@ -42,11 +42,32 @@ button_more_inline = InlineKeyboardButton(
 keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_more_inline]]
 )
 
+#---начало блока статистики
+userid : int = 0
+username : str = ''
+userqacntr : int = 0
+
+def sqlcntr(userid_, username_, userqacntr_) -> None:
+    mydb.reconnect()
+    mycursor = mydb.cursor()
+    #проверка на наличие записи в БД
+    mycursor.execute(f"SELECT * FROM `STATS` WHERE userid='{userid_}'")
+    myresult = mycursor.fetchall()
+    if myresult:
+        userqacntr_ = myresult[0][2]
+        userqacntr_+=1
+        mycursor.execute(f"UPDATE `STATS` SET userqacntr={userqacntr_} WHERE userid={userid_}")
+        mydb.commit()
+    else:
+        mycursor.execute(f"INSERT INTO `STATS` VALUES ({userid_}, '{username_}', 1)")
+        mydb.commit()
+#---конец блока статистики
 
 # Этот хэндлер будет срабатывать на команду "/start"
 @dp.message(Command(commands=["start"]))
 async def process_start_command(message: Message):
     await message.answer('Привет!\nЯ умею присылать вопросы викторины "Своя Игра"\nЖми "/go"')
+
 
 # Этот хэндлер будет срабатывать на команду "/help"
 @dp.message(Command(commands=["help"]))
@@ -86,16 +107,13 @@ async def process_start_command(message: Message):
     get_q_and_a()
     await message.answer(text=f'''Тема: <b>{topic}</b>\nЦена: {price}\n<i>{question}</i>''', parse_mode='HTML')
     await message.answer(text=f'''<span class='tg-spoiler'>{answer}</span>''', parse_mode='HTML', reply_markup=keyboard)
+    #блок для параметров модуля статистики от команды
+    global userid
+    userid = message.from_user.id
+    global username
+    username = message.from_user.username
+    sqlcntr(userid, username, userqacntr)
 
-# Этот хэндлер будет срабатывать на ответ "Ещё!" и добавлять ещё один вопрос
-#@dp.message(F.text == 'Ещё!')
-#async def process_start_command(message: Message):
-    #get_q_and_a()
-    #await message.answer(str(question))
-    #await message.answer(text=f"<span class='tg-spoiler'>'{answer}'</span>", parse_mode='HTML', reply_markup=keyboard)
-
-# Этот хэндлер будет срабатывать на апдейт типа CallbackQuery
-# с data 'more_button_pressed'
 
 @dp.callback_query(F.data == 'more_button_pressed')
 async def process_more_button_press(callback: CallbackQuery):
@@ -103,6 +121,13 @@ async def process_more_button_press(callback: CallbackQuery):
     await callback.message.answer(text=f'''Тема: <b>{topic}</b>\nЦена: {price}\n<i>{question}</i>''', parse_mode='HTML')
     await callback.message.answer(text=f'''<span class='tg-spoiler'>{answer}</span>''', parse_mode='HTML', reply_markup=keyboard)
     await callback.answer()
+    #блок для параметров модуля статистики Callback
+    global userid
+    userid = callback.message.chat.id
+    global username
+    username = callback.message.chat.username
+    sqlcntr(userid, username, userqacntr)
+
 
 # Регистрируем асинхронную функцию в диспетчере,
 # которая будет выполняться на старте бота,
