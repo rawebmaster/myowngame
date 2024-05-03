@@ -47,6 +47,7 @@ userid : int = 0
 username : str = ''
 userqacntr : int = 0
 
+#Запись статистики в БД
 def sqlcntr(userid_, username_, userqacntr_) -> None:
     mydb.reconnect()
     mycursor = mydb.cursor()
@@ -63,6 +64,18 @@ def sqlcntr(userid_, username_, userqacntr_) -> None:
         mydb.commit()
 #---конец блока статистики
 
+#---начало парсинга статистики
+mystat = []
+
+def get_statistics() -> list:
+    mydb.reconnect()
+    mycursor = mydb.cursor()
+    mycursor.execute(f"SELECT * FROM `STATS`")
+    global mystat
+    mystat = mycursor.fetchall()
+    return mystat
+#---конец парсинга статистики
+
 # Этот хэндлер будет срабатывать на команду "/start"
 @dp.message(Command(commands=["start"]))
 async def process_start_command(message: Message):
@@ -73,6 +86,13 @@ async def process_start_command(message: Message):
 @dp.message(Command(commands=["help"]))
 async def process_start_command(message: Message):
     await message.answer('Выбери "/go", чтобы проверить свои знания!')
+
+# Этот хэндлер будет срабатывать на команду "/elstatistico"
+@dp.message(Command(commands=["elstatistico"]))
+async def process_start_command(message: Message):
+    get_statistics()
+    for i in mystat:
+        await message.answer(str(i))
 
 myresult : list = []
 year : str = ''
